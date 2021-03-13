@@ -6,6 +6,7 @@ Created on Wed Mar 10 11:59:33 2021
 @author: tcicchini
 """
 
+import os
 import pandas as pd
 import plotly.express as px  # (version 4.7.0)
 import dash  # (version 1.12.0) pip install dash
@@ -16,18 +17,19 @@ import dash_leaflet as dl
 import geojson as gjs
 from dash.dependencies import Input, Output
 from dash_leaflet import express as dlx
+
 app = dash.Dash(__name__, external_stylesheets = [dbc.themes.FLATLY])
 
 
 # Bring the data
-df_events = pd.read_csv('events_app.csv',
+df_events = pd.read_csv(os.getcwd() + '/events_app.csv',
                         parse_dates = ['Reported Date'],
                         date_parser = pd.to_datetime
                         )
 df_events = df_events.rename({'Web ID' : 'Events'},
                              axis = 1)
-df_routes = pd.read_csv('rutas_app.csv')
-df_supraRoutes = pd.read_csv('supraRutas_app.csv')
+df_routes = pd.read_csv(os.getcwd() + '/rutas_app.csv')
+df_supraRoutes = pd.read_csv(os.getcwd() + '/supraRutas_app.csv')
 
 routes_supraRoutes_options = {'Route' : df_routes.route.to_list(),
                               'Supra Route' : df_supraRoutes.route.to_list()
@@ -45,7 +47,7 @@ func = {'Events' : 'count',
 select_df_color = {'Supra Route' : df_supraRoutes.set_index('route').to_dict()['colors'],
                    'Route' : df_routes.set_index('route').to_dict()['colors']}
 
-df_routes = gjs.load(open('routes.geojson','rb'))
+df_routes = gjs.load(open(os.getcwd() + '/routes.geojson','rb'))
 # App layout  - Using Bootstrap
 
 app.layout = html.Div([dbc.Row(dbc.Col(html.H1("Routes and SupraRoutes Temporal Analysis",
@@ -62,16 +64,29 @@ app.layout = html.Div([dbc.Row(dbc.Col(html.H1("Routes and SupraRoutes Temporal 
                                                                             ),
                                                                   width = 12)
                                                           ),
-                                                  dbc.Row(dbc.Col(dl.Map([dl.TileLayer(url = 'http://{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
-                                                                                       attribution = 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
-                                                                                       ),
-                                                                          dl.GeoJSON(data = df_routes)
-                                                                          ],
+                                                  dbc.Row(dbc.Col(dl.Map(dl.LayersControl([dl.BaseLayer(dl.TileLayer(id = 'layer',
+                                                                                                                     url = 'http://{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+                                                                                                                     attribution = 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+                                                                                                                     ),
+                                                                                                        name = 'Base Map',
+                                                                                                        checked = True
+                                                                                                        ),
+                                                                                           dl.Overlay([dl.GeoJSON(id = 'map-rutes',
+                                                                                                                  data = df_routes
+                                                                                                                  )],
+                                                                                                      name = 'Base Map',
+                                                                                                      checked = True
+                                                                                                      ),
+                                                                                           dl.Overlay(id = 'map-events',
+                                                                                                      children = [],
+                                                                                                      name = 'Events Points',
+                                                                                                      )
+                                                                                           ],
+                                                                                          ),
                                                                          style = {'width': '800px', 'height': '400px'},
                                                                          zoom = 4,
                                                                          center = (37,15),
-                                                                         id = 'map-analysis'
-                                                                         ),
+                                                                         id = 'map-analysis'),
                                                                   width = {'offset' : 1}
                                                                   )
                                                           )
@@ -137,8 +152,7 @@ app.layout = html.Div([dbc.Row(dbc.Col(html.H1("Routes and SupraRoutes Temporal 
                                className = 'h-75',
                                ) 
                        ],
-                      style={'height' : '100vh',
-                             'width' : '180vh',})
+                      )
                       
 
 # Connect the Plotly graphs with Dash Components
@@ -156,14 +170,13 @@ def set_routes_values(avaiable_options):
     return [i['value'] for i in avaiable_options]
 
 @app.callback([Output(component_id = 'temporal-analysis', component_property = 'figure'),
-                Output(component_id = 'map-analysis', component_property = 'children')
+               Output(component_id = 'map-events', component_property = 'children')
                ],
               [Input(component_id = 'date-picker-range', component_property = 'start_date'),
                Input(component_id = 'date-picker-range', component_property = 'end_date'),
                Input(component_id = 'agregation_option', component_property = 'value'),
                Input(component_id = 'routes_selection', component_property = 'value'),
                Input(component_id = 'slct_atribute', component_property = 'value'),
-               # Input(component_id = 'map-analysis', component_property = 'children')
                ]
               )
 def update_graph(start_date, end_date, agregation_option, routes, atribute):
@@ -187,19 +200,10 @@ def update_graph(start_date, end_date, agregation_option, routes, atribute):
     df['popup'] = [d.date() for d in df['Reported Date']]
     df = [row.to_dict() for row in df.iloc]
     df = dlx.dicts_to_geojson(df)
-    children = [dl.BaseLayer(dl.TileLayer(url = 'http://{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
-                             attribution = 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
-                             ),
-                             name = 'Base Map',
-                             checked = True
-                             ),
-                dl.Overlay(dl.GeoJSON(data = df_routes),
-                           name = 'Routes',
-                           checked = True)
-                ] + [dl.Overlay(dl.GeoJSON(data = df),
-                                name = 'Events Points')]
+
     
-    return fig, dl.LayersControl(children)
+    
+    return fig, dl.GeoJSON(data = df)
 # ------------------------------------------------------------------------------
 if __name__ == '__main__':
     app.run_server(debug=True,
