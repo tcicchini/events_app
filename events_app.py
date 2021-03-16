@@ -18,10 +18,10 @@ from dash.dependencies import Input, Output
 import geopandas as gpd
 
 app = dash.Dash(__name__, external_stylesheets = [dbc.themes.FLATLY])
-
-
+# Global Path for data
+THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 # Bring the data
-df_events = pd.read_csv(os.getcwd() + '/IOM_EV_input.csv',
+df_events = pd.read_csv(os.path.join(THIS_FOLDER, 'IOM_EV_input.csv'),
                         sep = ';',
                         parse_dates = ['Reported Date'],
                         date_parser = pd.to_datetime,
@@ -36,7 +36,7 @@ df_events['Events'] = [1 for i in range(len(df_events))]
 df_events['Total Dead and Missing'] = df_events['Total Dead and Missing'].apply(lambda x: x.replace(',','')).astype(int)
 df_events = gpd.GeoDataFrame(df_events, geometry = gpd.points_from_xy(df_events['Location Coordinates'].apply(lambda x:x.split(',')[1][1:]), df_events['Location Coordinates'].apply(lambda x: x.split(',')[0])))
 df_events.crs = 'EPSG:4326'
-df_routes = gpd.read_file(os.getcwd() + '/newRoutes.shp')
+df_routes = gpd.read_file(os.path.join(THIS_FOLDER, 'newRoutes'))
 df_routes['route'] = df_routes['route'].apply(lambda x: x.replace('Polygon_','').replace('_',' '))
 
 dict_route_supraRoute = {'Central Mediterranean 1' : 'Central Mediterranean',
