@@ -110,6 +110,7 @@ select_df_color = {'Supra Route' : df_routes[['Supra Route','colors']].drop_dupl
                    'Route' : dict_colors}
 select_df_color['Supra Route']['Other'] = 'black'
 
+map_key = 'Z1IZmXwfuHxpLnPUW9lp'
 # App layout  - Using Bootstrap
 
 app.layout = html.Div([dbc.Row(dbc.Col(html.H1("Routes and SupraRoutes Temporal Analysis",
@@ -127,8 +128,8 @@ app.layout = html.Div([dbc.Row(dbc.Col(html.H1("Routes and SupraRoutes Temporal 
                                                                   width = 12)
                                                           ),
                                                   dbc.Row(dbc.Col(dl.Map(dl.LayersControl([dl.BaseLayer(dl.TileLayer(id = 'layer',
-                                                                                                                     url = 'http://{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
-                                                                                                                     attribution = 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+                                                                                                                     url = 'https://api.maptiler.com/maps/outdoor/256/{z}/{x}/{y}@2x.png?key=' + map_key,
+                                                                                                                     attribution = '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> ' + '<a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
                                                                                                                      ),
                                                                                                         name = 'Base Map',
                                                                                                         checked = True
